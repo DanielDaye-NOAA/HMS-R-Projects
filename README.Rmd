@@ -1,19 +1,18 @@
 ---
-title: R Projects developed for NOAA HMS
+title: R Projects developed for NOAA Fisheries Atlantic HMS
 author: Daniel Daye
 output:
   github_document:
-    toc: yes
-    toc_depth: 2
+    toc: no
 ---
 
 Project documentation and code repository for R Projects developed for NOAA Atlantic HMS
 
-## Projects
+### Projects
 
 * TBD
 
 
-## Notes
+### Notes
 
 * TBD
