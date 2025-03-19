@@ -21,7 +21,7 @@ source("./r-functions/GenerateVesselListParameters.R")
 source("./r-functions/QueryDBConnection.R")
 source("./r-functions/SaveNFPLRSDataFiles.R")
 
-# List Creation ----
+# List Parameters ----
 
 # Get monthly vessel list parameters
 vlist_params <- GenerateVesselListParameters()
@@ -31,14 +31,26 @@ rm(GenerateVesselListParameters)
 query_text <- BuildQueryNFPLRS(vlist_params)
 rm(BuildQueryNFPLRS)
 
-## SQL DB Pull ----
+
+# SQL DB Pull ----
 oa_permits <- QueryDBConnection(db_Host, db_Port, db_Name, path.java_jre, path.ojdbc8_jar, db_Schema, query_text)
 rm(db_Acct, db_Host, db_Name, db_Pass, db_Port, db_Schema,
    path.java_jre, path.ojdbc8_jar, query_text, QueryDBConnection)
 
-## Save NFPLRS Data ----
+# Save NFPLRS Data ----
 SaveNFPLRSDataFiles(oa_permits, vlist_params)
 
 
+# PIMS ----
 
+#' Instructions for Acquiring PIMS Data:
+#' 
+#' Log into PIMS via CAC, navigate to the "Permits" tab.
+#' Select "Filter for Vessel HMS Export".
+#' For the "ISSUED DATE" field, select all dates from the current month and prior month for the 
+#'   vessel list being generated (e.g. FEB: 01/01/YYYY - 03/01/YYYY ).
+#' Sometimes, PIMS-permitted vessels may receive their permit in an earlier month than when the 
+#'   permit is made active, so including the prior month should capture these instances.
+#' Select "Export to Excel"
 
+oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
