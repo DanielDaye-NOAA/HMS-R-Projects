@@ -15,9 +15,12 @@ source("./setup/libraries.R")
 source("./setup/filepath-settings.R")
 source("./setup/NFPLRS-database-credentials.R")
 
-# Load Functions 
+# Load Functions
+source("./r-functions/BuildCP01.R")
 source("./r-functions/BuildQueryNFPLRS.R")
 source("./r-functions/GenerateVesselListParameters.R")
+source("./r-functions/LoadICCATVesselRef.R")
+source("./r-functions/ProcessPIMSData.R")
 source("./r-functions/QueryDBConnection.R")
 source("./r-functions/SaveNFPLRSDataFiles.R")
 
@@ -54,3 +57,16 @@ SaveNFPLRSDataFiles(oa_permits, vlist_params)
 #' Select "Export to Excel"
 
 oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
+
+
+# Vessel Reference
+ICCAT_vesref <- LoadICCATVesselRef()
+
+# Scrape FOSS ----
+FOSS_vessels <- ScrapeFOSS(oa_pims_permits)
+
+# Merge OA-PIMS, ICCAT, FOSS ----
+compiled_vessel_permits <- MergeVesselDataSources(oa_pims_permits, ICCAT_vesref, FOSS_vessels)
+
+# Build CP_01 Template ----
+BuildCP01(compiled_vessel_permits)

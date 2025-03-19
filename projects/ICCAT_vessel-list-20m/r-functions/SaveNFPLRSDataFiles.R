@@ -16,11 +16,10 @@ SaveNFPLRSDataFiles <- function (oa_permits, vlist_params, verbose = FALSE) {
   } else {message(paste0("Filepath located for ", vlist_params$mabb1, " ", vlist_params$year1, "!"))}
   Sys.sleep(1)
   
-  oap_filename <- paste0("NFPLRS-OAP_", vlist_params$year1, "-", vlist_params$mabb1)
+  oap_filename <- paste0(path.mnth,"NFPLRS-OAP_", vlist_params$year1, "-", vlist_params$mabb1)
   
   # Save as both CSV and XLSX
   write_csv(oa_permits, file = paste0(oap_filename, ".csv"))
   write.xlsx(oa_permits, file = paste0(oap_filename, ".xlsx"))
-  
   message(paste0("NFPLRS permit info saved to ", path.mnth))
 }
