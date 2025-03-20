@@ -3,11 +3,15 @@
 .RData
 .Ruserdata
 
+# /DDaye/R/
 default-dir/
 package-documentation/
 r-packages/
 r-practice/
 workshop-notes/
-
-
 note-to-self.txt
+
+# /R/projects/
+projects/generate-letters-Elsa/
+projects/ICCAT_vessel-list-20m/report-files/
+projects/nmfspalette/
