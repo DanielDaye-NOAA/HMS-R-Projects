@@ -86,5 +86,6 @@ LoadICCATVesselRef <- function () {
            NATREGNO = ifelse(substr(NATREGNO,1,2) == "DO", gsub("DO", "", NATREGNO), NATREGNO),
            INT_TYPE = ifelse(INT_TYPE == "unk", NA, INT_TYPE))
   
+  message("ICCAT vessel reference loaded!")
   return(ICCAT_VesRef)
 }

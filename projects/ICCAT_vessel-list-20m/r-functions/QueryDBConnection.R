@@ -1,4 +1,4 @@
-QueryDBConnection <- function (db_Host, db_Port, db_Name, path.java_jre, path.ojdbc8_jar, db_Schema, query_text) {
+QueryDBConnection <- function (db_Host, db_Port, db_Name, path.java_jre, path.ojdbc8_jar, db_Schema, query_text, verbose = FALSE) {
   
   # Generate DB URL and set PATH
   db_URL <- paste("jdbc:oracle:thin:@//",db_Host,":",db_Port,"/",db_Name, sep = "")
@@ -10,13 +10,16 @@ QueryDBConnection <- function (db_Host, db_Port, db_Name, path.java_jre, path.oj
   # Create DB connection
   jdb_connection <- dbConnect(jdbc_driver, db_URL, user = db_Acct, password = db_Pass)
   
-  # Print TABLE_NAMES to console
-  message("head(SCHEMA-TABLE-NAMES)")
-  print(head(data.frame(TABLE_NAMES = dbListTables(jdb_connection, schema = db_Schema))))
-  Sys.sleep(3)
-  message("tail(SCHEMA-TABLE-NAMES)")
-  print(tail(data.frame(TABLE_NAMES = dbListTables(jdb_connection, schema = db_Schema))))
-  Sys.sleep(3)
+  if (verbose) {
+    # Print TABLE_NAMES to console
+    message("head(SCHEMA-TABLE-NAMES)")
+    print(head(data.frame(TABLE_NAMES = dbListTables(jdb_connection, schema = db_Schema))))
+    Sys.sleep(3)
+    message("tail(SCHEMA-TABLE-NAMES)")
+    print(tail(data.frame(TABLE_NAMES = dbListTables(jdb_connection, schema = db_Schema))))
+    Sys.sleep(3)
+  }
+  
   
   NFPLRS_permits <- dbGetQuery(jdb_connection, query_text)
   
@@ -30,5 +33,6 @@ QueryDBConnection <- function (db_Host, db_Port, db_Name, path.java_jre, path.oj
     mutate(VESNAME = toupper(VESNAME),
            PERMIT_HOLDER = toupper(PERMIT_HOLDER))
   
+  message("NFPLRS permits acquired!")
   return(NFPLRS_permits)
 }

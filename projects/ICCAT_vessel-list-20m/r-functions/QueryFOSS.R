@@ -57,7 +57,7 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
       
       # Navigate to FOSS webpage
       remDr$navigate("https://www.fisheries.noaa.gov/foss/f?p=215:4")
-      remDr$setTimeout(type = "page load", milliseconds = 60000)
+      readline("Press Enter once FOSS has loaded...")
       
       # Select "Vessel Name" radio button
       rb.vesname <- remDr$findElement("css", "#P4_VES_LOV")
@@ -162,5 +162,7 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
               CG_IMO     = `IMO Number`)
   
   print(head(vessels_FOSS))
+  
+  message("FOSS vessel list compiled!")
   return(vessels_FOSS)
 }

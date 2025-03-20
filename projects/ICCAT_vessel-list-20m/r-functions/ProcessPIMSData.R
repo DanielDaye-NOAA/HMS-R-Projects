@@ -3,7 +3,7 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
   path.year <- paste0(path.report_files,vlist_params$year1,"/")
   path.mnth <- paste0(path.year,vlist_params$mabb1,"/")
   
-  pims_filename <- paste0("PIMS_", vlist_params$year1, "_", vlist_params$mabb1)
+  pims_filename <- paste0("PIMS_", vlist_params$year1, "_", vlist_params$mabb1, ".xlsx")
   
   
   # Move the PIMS data file from /Downloads/ to the proper report-files folder
@@ -25,7 +25,7 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
   }
   
   # Load in the PIMS data and standardize column names between NFPLRS and PIMS
-  pims_permits <- read_xlsx(paste0(path.mnth, pims_filename, ".xlsx"), guess_max = 1e6, skip = 5) %>%
+  pims_permits <- read_xlsx(paste0(path.mnth, pims_filename), guess_max = 1e6, skip = 5) %>%
     select(-c(`Vessel Home Port (City, State, County)`, `IssueDate`))
   
   names(oa_permits)
@@ -110,7 +110,6 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
   # QAQC ----
   message(sum(is.na(oa_pims_permits$METERS) | oa_pims_permits$METERS == 0), " Vessels missing length info")
   
-  
   # Vessel Type
   oa_pims_permits <- oa_pims_permits %>%
     mutate(PERMIT_TYPE = ifelse(grepl("ATL-", PERMIT), "LL", NA),
@@ -132,12 +131,15 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
     select(PERMIT_TYPE, GEAR_TYPE) %>%
     table()
   
+  
+  
   # Saving oa_pims_permits
   message("Saving oa_pims_permits dataset...")
   oa_p_filename <- paste0(path.mnth, "oa_pims_permits")
   
-  write_csv(oa_pims_permits, file = paste0(oa_p_filename, ".csv"))
+  write_csv(oa_pims_permits,  file = paste0(oa_p_filename, ".csv"))
   write.xlsx(oa_pims_permits, file = paste0(oa_p_filename, ".xlsx"))
   
+  message("PIMS data process and combined with NFPLRS!")
   return(oa_pims_permits)
 }

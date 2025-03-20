@@ -21,5 +21,6 @@ SaveNFPLRSDataFiles <- function (oa_permits, vlist_params, verbose = FALSE) {
   # Save as both CSV and XLSX
   write_csv(oa_permits, file = paste0(oap_filename, ".csv"))
   write.xlsx(oa_permits, file = paste0(oap_filename, ".xlsx"))
+  
   message(paste0("NFPLRS permit info saved to ", path.mnth))
 }

@@ -35,7 +35,6 @@ rm(GenerateVesselListParameters)
 query_text <- BuildQueryNFPLRS(vlist_params)
 rm(BuildQueryNFPLRS)
 
-
 # SQL DB Pull ----
 oa_permits <- QueryDBConnection(db_Host, db_Port, db_Name, path.java_jre, path.ojdbc8_jar, db_Schema, query_text)
 rm(db_Acct, db_Host, db_Name, db_Pass, db_Port, db_Schema,
@@ -44,9 +43,7 @@ rm(db_Acct, db_Host, db_Name, db_Pass, db_Port, db_Schema,
 # Save NFPLRS Data ----
 SaveNFPLRSDataFiles(oa_permits, vlist_params)
 
-
 # PIMS ----
-
 #' Instructions for Acquiring PIMS Data:
 #' 
 #' Log into PIMS via CAC, navigate to the "Permits" tab.
@@ -57,7 +54,6 @@ SaveNFPLRSDataFiles(oa_permits, vlist_params)
 #'   permit is made active, so including the prior month should capture these instances.
 #' Select "Export to Excel"
 oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
-
 
 # Vessel Reference
 ICCAT_vesref <- LoadICCATVesselRef()
