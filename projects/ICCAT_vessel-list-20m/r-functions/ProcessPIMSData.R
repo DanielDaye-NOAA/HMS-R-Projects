@@ -1,4 +1,4 @@
-ProcessPIMSData <- function (vlist_params, oa_permits) {
+ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
   
   path.year <- paste0(path.report_files,vlist_params$year1,"/")
   path.mnth <- paste0(path.year,vlist_params$mabb1,"/")
@@ -6,7 +6,7 @@ ProcessPIMSData <- function (vlist_params, oa_permits) {
   pims_filename <- paste0("PIMS_", vlist_params$year1, "_", vlist_params$mabb1)
   
   
-  # Move the PIMS data file from /Downloads/ to the proper report_files folder
+  # Move the PIMS data file from /Downloads/ to the proper report-files folder
   if (sum(grepl(pims_filename, list.files(path.mnth))) > 0) {
     message(paste("PIMS data already located in", path.mnth))
   } else {
@@ -18,7 +18,7 @@ ProcessPIMSData <- function (vlist_params, oa_permits) {
     
     message(paste0("Located '", list.files(path_env_user)[pims_index], "' in Downloads folder"))
     
-    # Copy to report_files and rename
+    # Copy to report-files and rename
     file.copy(paste0(path_env_user, list.files(path_env_user)[pims_index]), paste0(path.mnth))
     file.rename(paste0(path.mnth, list.files(path_env_user)[pims_index]), 
                 paste0(path.mnth, "PIMS_", vlist_params$year1, "_", vlist_params$mabb1, ".xlsx"))
@@ -55,14 +55,15 @@ ProcessPIMSData <- function (vlist_params, oa_permits) {
     mutate(PERMIT = ifelse(NPERMIT == 1 & grepl("SKI|SKD", PERMITS), NA, PERMITS),
            PERMIT = ifelse(grepl("ATL|SF*", PERMITS), PERMIT, NA))
   
-  pims_permits %>%
-    select(-PERMIT) %>% 
-    left_join(pims_summary %>% select(-PERMITS), by = "VESID") %>%
-    distinct() %>% 
-    mutate(METERS = as.numeric(METERS) * 0.3048) %>%
-    filter(!is.na(PERMIT),
-           METERS > 20) %>% 
-    View()
+  if (verbose) {
+    pims_permits %>%
+      select(-PERMIT) %>% 
+      left_join(pims_summary %>% select(-PERMITS), by = "VESID") %>%
+      distinct() %>% 
+      mutate(METERS = as.numeric(METERS) * 0.3048) %>%
+      filter(!is.na(PERMIT), METERS > 20) %>% 
+      head() %>% print()
+  }
   
   # QAQC
   setdiff(names(pims_permits), names(oa_permits))  # Should be character(0)

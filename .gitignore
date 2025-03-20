@@ -9,9 +9,21 @@ package-documentation/
 r-packages/
 r-practice/
 workshop-notes/
+HMS-R-Projects.Rproj
 note-to-self.txt
 
 # /R/projects/
+projects/.deprecated/
 projects/generate-letters-Elsa/
+projects/ICCAT_vessel-list-20m/data/CP01/CP01-vessel-list.xlsx
+projects/ICCAT_vessel-list-20m/data/FCC/
+projects/ICCAT_vessel-list-20m/data/ICCAT-vessel-references/
+projects/ICCAT_vessel-list-20m/data/Java/
 projects/ICCAT_vessel-list-20m/report-files/
+projects/ICCAT_vessel-list-20m/setup/filepath-settings.R
+projects/ICCAT_vessel-list-20m/setup/NFPLRS-database-credentials.R
 projects/nmfspalette/
+projects/website-testing/
+
+# Wildcards
+projects/*/*.Rproj

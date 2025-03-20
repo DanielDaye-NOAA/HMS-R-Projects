@@ -22,8 +22,8 @@ source("./r-functions/GenerateVesselListParameters.R")
 source("./r-functions/LoadICCATVesselRef.R")
 source("./r-functions/ProcessPIMSData.R")
 source("./r-functions/QueryDBConnection.R")
+source("./r-functions/QueryFOSS.R")
 source("./r-functions/SaveNFPLRSDataFiles.R")
-source("./r-functions/ScrapeFOSS.R")
 
 # List Parameters ----
 
