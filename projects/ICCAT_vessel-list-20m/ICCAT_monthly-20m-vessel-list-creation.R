@@ -23,6 +23,7 @@ source("./r-functions/LoadICCATVesselRef.R")
 source("./r-functions/ProcessPIMSData.R")
 source("./r-functions/QueryDBConnection.R")
 source("./r-functions/SaveNFPLRSDataFiles.R")
+source("./r-functions/ScrapeFOSS.R")
 
 # List Parameters ----
 
@@ -55,7 +56,6 @@ SaveNFPLRSDataFiles(oa_permits, vlist_params)
 #' Sometimes, PIMS-permitted vessels may receive their permit in an earlier month than when the 
 #'   permit is made active, so including the prior month should capture these instances.
 #' Select "Export to Excel"
-
 oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
 
 
@@ -63,10 +63,10 @@ oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
 ICCAT_vesref <- LoadICCATVesselRef()
 
 # Scrape FOSS ----
-FOSS_vessels <- ScrapeFOSS(oa_pims_permits)
+FOSS_vessels <- QueryFOSS(oa_pims_permits, vlist_params, option = "scrape")
 
 # Merge OA-PIMS, ICCAT, FOSS ----
-compiled_vessel_permits <- MergeVesselDataSources(oa_pims_permits, ICCAT_vesref, FOSS_vessels)
+compiled_vessel_permits <- MergeVesselDataSources(oa_pims_permits, ICCAT_vesref, FOSS_vessels, vlist_params)
 
 # Build CP_01 Template ----
 BuildCP01(compiled_vessel_permits)

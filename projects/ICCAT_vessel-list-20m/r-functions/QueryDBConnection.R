@@ -30,7 +30,5 @@ QueryDBConnection <- function (db_Host, db_Port, db_Name, path.java_jre, path.oj
     mutate(VESNAME = toupper(VESNAME),
            PERMIT_HOLDER = toupper(PERMIT_HOLDER))
   
-  permit_counts <- 
-  
   return(NFPLRS_permits)
 }

@@ -3,7 +3,11 @@
 .RData
 .Ruserdata
 
+default-dir/
+package-documentation/
+r-packages/
 r-practice/
+workshop-notes/
 
 
 note-to-self.txt

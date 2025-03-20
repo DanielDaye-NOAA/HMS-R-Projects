@@ -16,7 +16,7 @@ LoadICCATVesselRef <- function () {
     browseURL("https://www.iccat.int/en/Vesexport.asp?vStatus=2")               # Inactive
     browseURL("https://www.iccat.int/en/Vesexport.asp?vStatus=3")               # Inoperative
     
-    message("Please each ICCAT files and re-save them as Excel 97 workbooks (.xls)")
+    message("Please open each ICCAT file and re-save them as Excel 97 workbooks (.xls)")
     readline("Press Enter when ICCAT files have downloaded...")
   }
 
