@@ -60,7 +60,7 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
       select(-PERMIT) %>% 
       left_join(pims_summary %>% select(-PERMITS), by = "VESID") %>%
       distinct() %>% 
-      mutate(METERS = as.numeric(METERS) * 0.3048) %>%
+      mutate(METERS = round(as.numeric(METERS) * 0.3048), digits = 1) %>%
       filter(!is.na(PERMIT), METERS > 20) %>% 
       head() %>% print()
   }
@@ -73,7 +73,8 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
   oa_permits <- oa_permits %>% 
     mutate(across(everything(), as.character))
   pims_permits <- pims_permits %>% 
-    mutate(across(everything(), as.character))
+    mutate(METERS = round(as.numeric(METERS) * 0.3048, digits = 1),
+           across(everything(), as.character))
   
   oa_pims_permits <- bind_rows(oa_permits, pims_permits) %>%
     arrange(VESID) %>%
