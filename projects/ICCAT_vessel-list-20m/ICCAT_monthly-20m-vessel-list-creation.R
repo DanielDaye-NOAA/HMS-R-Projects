@@ -18,8 +18,10 @@ source("./setup/NFPLRS-database-credentials.R")
 # Load Functions
 source("./r-functions/BuildCP01.R")
 source("./r-functions/BuildQueryNFPLRS.R")
+source("./r-functions/ExtractFCC.R")
 source("./r-functions/GenerateVesselListParameters.R")
 source("./r-functions/LoadICCATVesselRef.R")
+source("./r-functions/MergeVesselDataSources.R")
 source("./r-functions/ProcessPIMSData.R")
 source("./r-functions/QueryDBConnection.R")
 source("./r-functions/QueryFOSS.R")
@@ -42,6 +44,7 @@ rm(db_Acct, db_Host, db_Name, db_Pass, db_Port, db_Schema,
 
 # Save NFPLRS Data ----
 SaveNFPLRSDataFiles(oa_permits, vlist_params)
+rm(SaveNFPLRSDataFiles)
 
 # PIMS ----
 #' Instructions for Acquiring PIMS Data:
@@ -54,15 +57,25 @@ SaveNFPLRSDataFiles(oa_permits, vlist_params)
 #'   permit is made active, so including the prior month should capture these instances.
 #' Select "Export to Excel"
 oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
+remove(ProcessPIMSData)
 
 # Vessel Reference
 ICCAT_vesref <- LoadICCATVesselRef()
+rm(LoadICCATVesselRef)
 
 # Scrape FOSS ----
 FOSS_vessels <- QueryFOSS(oa_pims_permits, vlist_params, option = "scrape")
+rm(QueryFOSS)
 
 # Merge OA-PIMS, ICCAT, FOSS ----
 compiled_vessel_permits <- MergeVesselDataSources(oa_pims_permits, ICCAT_vesref, FOSS_vessels, vlist_params)
+rm(MergeVesselDataSources)
 
 # Build CP_01 Template ----
-BuildCP01(compiled_vessel_permits)
+BuildCP01(compiled_vessel_permits, vlist_params)
+
+# At this point, go into the completed template, and make any adjustments needed.
+# Save as "YYYY-MON_CP01-template-vessel-list-final.xlsx
+
+# Compile FCC ULS info
+CompileFCC(vlist_params, option = "local")

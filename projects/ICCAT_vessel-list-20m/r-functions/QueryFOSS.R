@@ -77,7 +77,7 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
       button.report <- remDr$findElement("css", "#p4_go")
       button.report$highlightElement()
       button.report$clickElement()
-      remDr$setTimeout(type = "page load", milliseconds = 60000)
+      Sys.sleep(5)
       
       # Select "Vessel Check" from the dropdown
       dropdown <- remDr$findElement('css', "#interactive_report_vessels_saved_reports")
@@ -89,32 +89,34 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
       dropdown <- remDr$findElement('css', 
                                     paste0("#interactive_report_vessels_saved_reports option[value='", option.select, "']"))
       dropdown$clickElement()
-      remDr$setTimeout(type = "page load", milliseconds = 60000)
+      Sys.sleep(3)
       
       # Opens "Actions" dropdown
       actions <- remDr$findElement("css", "#interactive_report_vessels_actions_button")
       actions$highlightElement()
       actions$clickElement()
-      remDr$setTimeout(type = "page load", milliseconds = 60000)
+      Sys.sleep(3)
       
       # Click "Download"
       download <- remDr$findElement("css", "#interactive_report_vessels_actions_menu_14i")
       download$highlightElement()
       Sys.sleep(0.5)
       download$clickElement()
+      Sys.sleep(2)
       
       # Click "CSV"
       option.csv <- remDr$findElement("xpath", "/html/body/div[5]/div[2]/div/ul/li[1]")
       option.csv$highlightElement()
       Sys.sleep(0.5)
       option.csv$clickElement() 
+      Sys.sleep(2)
       
       # Click "Download" - sends to Downloads folder
       final.dl <- remDr$findElement("xpath", '//*[@id="t_PageBody"]/div[5]/div[3]/div/button[2]')
       final.dl$highlightElement()
       Sys.sleep(0.5)
       final.dl$clickElement()
-      remDr$setTimeout(type = "page load", milliseconds = 60000)
+      Sys.sleep(60)
       
       # Close the window and connection #
       remDr$close()

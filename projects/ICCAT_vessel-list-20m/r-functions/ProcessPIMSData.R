@@ -141,6 +141,6 @@ ProcessPIMSData <- function (vlist_params, oa_permits, verbose = FALSE) {
   write_csv(oa_pims_permits,  file = paste0(oa_p_filename, ".csv"))
   write.xlsx(oa_pims_permits, file = paste0(oa_p_filename, ".xlsx"))
   
-  message("PIMS data process and combined with NFPLRS!")
+  message("PIMS data processed and combined with NFPLRS!")
   return(oa_pims_permits)
 }
