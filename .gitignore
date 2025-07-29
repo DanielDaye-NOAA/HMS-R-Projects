@@ -6,6 +6,7 @@
 # /DDaye/R/
 default-dir/
 package-documentation/
+r-functions/deprecated/
 r-packages/
 r-practice/
 workshop-notes/
@@ -28,6 +29,7 @@ projects/ICCAT_vessel-list-20m/data/FCC/
 projects/ICCAT_vessel-list-20m/data/ICCAT-vessel-references/
 projects/ICCAT_vessel-list-20m/data/Java/
 projects/ICCAT_vessel-list-20m/data/NFPLRS_info.txt - Shortcut.lnk
+projects/ICCAT_vessel-list-20m/deprecated-r-scripts/
 projects/ICCAT_vessel-list-20m/r-functions/ScrapeFCC.R
 projects/ICCAT_vessel-list-20m/report-files/
 projects/ICCAT_vessel-list-20m/setup/filepath-settings.R

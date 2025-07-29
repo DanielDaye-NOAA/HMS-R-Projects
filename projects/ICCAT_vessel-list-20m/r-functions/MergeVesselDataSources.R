@@ -1,6 +1,10 @@
+# Combine HMS permit data and check against ICCAT and Coast Guard Data
+
 MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels, vlist_params) {
   
-  # QAQC
+  # Check for missing info ----
+  
+  # NFPLRS-PIMS
   message('Columns with missing permit information in oa_pims_permits:')
   colSums(is.na(oa_pims_permits)) %>% 
     data.frame() %>%
@@ -9,6 +13,7 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
     head() %>% print()
   Sys.sleep(1)
   
+  # ICCAT
   message('Columns with missing permit information in ICCAT_vesref:')
   colSums(is.na(ICCAT_vesref)) %>% 
     data.frame() %>%
@@ -17,6 +22,7 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
     head() %>% print()
   Sys.sleep(1)
   
+  # FOSS (CG)
   message('Columns with missing permit information in FOSS_vessels:')
   colSums(is.na(FOSS_vessels)) %>% 
     data.frame() %>%
@@ -25,11 +31,15 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
     head() %>% print()
   Sys.sleep(1)
   
+  # Renaming columns for left_join
   FOSS_vessels <- FOSS_vessels %>%
     mutate(VESID = as.character(CG_NUM),
            CG_IMO = as.character(CG_IMO),
            CG_LENGTH = round(CG_LENGTH * 0.3048, digits = 1))
   
+  #' In some instances, there might be two entries for the same ICCAT VESID (an error), this will 
+  #' collapse all entries for a single VESID into one column and preserve the unique info in each
+  #' entry
   ICCAT_uniqueref <- ICCAT_vesref %>%
     filter(!is.na(NATREGNO)) %>%
     rename(VESID = NATREGNO) %>% 
@@ -60,14 +70,19 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
            STATUS = ifelse(STATUS=="ACTIVE:INACTIVE", "ACTIVE", STATUS),
            STATUS = ifelse(STATUS=="INACTIVE:INACTIVE", "INACTIVE", STATUS))
   
+  # Quick check on vessel statuses
   table(ICCAT_uniqueref$STATUS)
   
+  # Combining NFPLRS/PIMS data with FOSS (CG) and ICCAT reference data
   compiled_vessel_permits <- oa_pims_permits %>%
-    filter(METERS >= 20,
-           !grepl("NOVESID",VESID)) %>%
+    # Only vessels > 20m with a valid VESID
+    filter(METERS >= 20, !grepl("NOVESID",VESID)) %>%
+    # Some vessels might have "DO" before their VESID - remove that here
     mutate(VESID = ifelse(substr(VESID,1,2) == "DO", gsub("DO","",VESID), VESID)) %>%
+    # left_joins for CG and ICCAT data
     left_join(FOSS_vessels %>% select(-CG_NUM), by = "VESID") %>%
     left_join(ICCAT_uniqueref, by = "VESID") %>%
+    # Reorganizing columns
     relocate(ICCAT, ICCAT_NUM, IMO_NUMBER, CG_IMO, INTREGNO, INT_TYPE,
              VESID, VESNAME, ICCAT_VNAME, ICCAT_PRVNAME,
              PERMIT, CHBENDORSEMENT, PERMIT_TYPE, GEAR_TYPE, 
@@ -75,6 +90,7 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
              METERS, CG_LENGTH, ICCAT_LENGTH, 
              GT, CG_TONNAGE, TONNAGE, HP, ICCAT_HP)
   
+  # Combining all permits into one-row-per-vessel format
   permit_types <- compiled_vessel_permits %>%
     group_by(VESID) %>% 
     summarize(N = n(),
@@ -86,8 +102,7 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
   compiled_vess_unique <- compiled_vessel_permits %>%
     left_join(permit_types %>% select(-N), by = "VESID") %>%
     filter(grepl("ATL|CHARTER|GENERAL|SFH|ANGLING", PERMIT)) %>%
-    mutate(VESNAME = gsub("DO|D0", "", VESNAME),
-           VESNAME = gsub("\u0092", "'", VESNAME))
+    mutate(VESNAME = gsub("\u0092", "'", VESNAME))
   
   # PRE - QAQC TABLES ----
   compiled_vess_unique %>% arrange(PERMITS) %>% select(PERMITS, PERMIT_TYPE) %>% table()
@@ -106,16 +121,28 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
   
   ## IMO (INTREGNO) ----
   compiled_vess_unique <- compiled_vess_unique %>%
+    
+    # Check for issues with IMO numbers
     mutate(CP01_IMO = IMO_NUMBER,
+           # Check if IMO number matches VESID (need to have a unique IMO)
            IMO_FLAG = ifelse(IMO_NUMBER==VESID, "IMO = VESID", NA),
+           # Check if IMO number is missing
            IMO_FLAG = ifelse(is.na(IMO_NUMBER)&is.na(CG_IMO)&is.na(INTREGNO), "IMO_MISSING", IMO_FLAG),
+           # Check if IMO numbers don't match between HMS/PIMS/CG/ICCAT data sources
            IMO_FLAG = ifelse(((!is.na(IMO_NUMBER) & !is.na(CG_IMO))|(!is.na(INTREGNO))) &
                                (IMO_NUMBER != CG_IMO | IMO_NUMBER != INTREGNO), "IMO_MISMATCH", IMO_FLAG),
+           # If a vessel is rec but has an IMO number, store that here
            IMO_FLAG2 = ifelse(PERMIT_TYPE == "RO" & !is.na(INTREGNO) & !(INTREGNO%in%c("1","0000001")), "HISTORIC_IMO", NA)) %>%
+    
+    # Filling in data for the IMO column for ICCAT
     mutate(CP01_IMO = ifelse(is.na(CP01_IMO) & PERMIT_TYPE == "RO" & INTREGNO == "0000001", "0000001", CP01_IMO),
+           # Preserve the historic IMO number if present
            CP01_IMO = ifelse(is.na(CP01_IMO) & IMO_FLAG2 == "HISTORIC_IMO", INTREGNO, CP01_IMO),
+           # Fill all other rec vessels with 0000001
            CP01_IMO = ifelse(is.na(CP01_IMO) & PERMIT_TYPE == "RO", "0000001", CP01_IMO),
            CP01_IMO = ifelse(is.na(CP01_IMO) & INT_TYPE == "LRN" & !is.na(INTREGNO), INTREGNO, CP01_IMO)) %>%
+    
+    # Reorganize for better spot-checking, if necessary
     relocate(VESID, PERMIT_TYPE, STATUS, IMO_NUMBER, CG_IMO, INTREGNO, CP01_IMO, IMO_FLAG, IMO_FLAG2, .after = last_col())
   
   
@@ -152,6 +179,7 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
            IRCS_FLAG = ifelse(!is.na(IRCS) & !is.na(ICCAT_IRCS) & (IRCS != ICCAT_IRCS), "IRCS != ICCAT_IRCS", NA)) %>%
     relocate(IRCS, ICCAT_IRCS, CP01_IRCS, IRCS_FLAG, .after = last_col())
   
+  # Create a table to summarize how many new/old/renamed vessels are present in the current list
   data_QAQC_summary <- data.frame(vessel_count = nrow(compiled_vess_unique),
                                   num_same_name = sum(compiled_vess_unique$VNAME_FLAG == "SAME_NAME"),
                                   num_new_name = sum(compiled_vess_unique$VNAME_FLAG == "NEW_NAME"),
@@ -171,6 +199,9 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
   
   # Checking Length ~ Weights
   
+  #' Plot tonnage ~ length. This should be a reasonably linear relationship. If a vessel has a very large
+  #' and very small tonnage, it is likely a small boat (< 20m) that has been incorrectly entered into
+  #' the HMS permit website
   compiled_vess_unique %>%
     ggplot(aes(CP01_LENGTH, CP01_TONNAGE)) +
     geom_point() + theme_bw()

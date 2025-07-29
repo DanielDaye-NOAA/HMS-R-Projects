@@ -1,3 +1,9 @@
+# Extract Vessel Data from Fisheries One Stop Shop (FOSS)
+
+#' If VESSELS.csv has already been downloaded (and is located within the current month's report folder),
+#' then this function will skip the scraping step and load in the data from the downloaded version of
+#' the report file
+
 QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser = "chrome") {
   
   path.year <- paste0(path.report_files,vlist_params$year1,"/")
@@ -11,6 +17,7 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
   oa_pims_permits <- oa_pims_permits %>%
     filter(!grepl("NOVESID", VESID))
   
+  # FOSS needs VESIDs to be colon-separated
   oa_pims_vesid <- paste(sort(unique(oa_pims_permits$VESID)), collapse = ":")
   
   #' TROUBLESHOOTING
@@ -42,7 +49,7 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
       newest_cdriver <- sort(binman_cdriver, decreasing = TRUE)[1]
       
       driver_port <- free_port()
-      rs_driver <- rsDriver(port = driver_port, browser = rsbrowser, chromever = newest_cdriver, verbose = FALSE)
+      rs_driver <- rsDriver(port = driver_port, browser = rsbrowser, chromever = newest_cdriver, verbose = FALSE, phantomver = NULL)
       message("Waiting for Chrome to Load....")
       readline("Once the Chrome window has opened, maximize and press Enter to continue...")
       
@@ -151,18 +158,21 @@ QueryFOSS <- function (oa_pims_permits, vlist_params, option = "api", rsbrowser 
       
       # API call ----
       message("Querying FOSS via API call...")
+      stop("API methods not yet implemented, please use option == 'scrape'")
       
     }
   } else {
     message("VESSELS.csv found in ", path.mnth, " - skipping FOSS query...")
   }
   
+  # Read in data from VESSELS.csv, format column names, and return
   vessels_FOSS <- read_csv(paste0(path.mnth, "VESSELS.csv"), guess_max = 1e6, skip = 1) %>%
     transmute(CG_NUM     = `USCG Number`,
               CG_LENGTH  = `Reg. Length`,
               CG_TONNAGE = `Reg. Gross Tons`,
               CG_IMO     = `IMO Number`)
   
+  # Spot-check
   print(head(vessels_FOSS))
   
   message("FOSS vessel list compiled!")
