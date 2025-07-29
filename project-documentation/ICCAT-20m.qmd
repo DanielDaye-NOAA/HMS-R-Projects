@@ -1,0 +1,128 @@
+---
+title: "ICCAT-20m"
+author: "DDAYE"
+format: 
+  html:
+    toc: true
+editor: visual
+embed-resources: true
+---
+
+## Installation and Setup
+
+From the **File** dropdown, select **New Project...**
+
+![](images/rproj-newproject.png){fig-align="center"}
+
+Select **Existing Directory**
+
+![](images/proj-from-directory.png){fig-align="center"}
+
+Select "ICCAT_vessel-list-20m" and create a new project at this location
+
+![](images/dir-20mVessList.png){fig-align="center"}
+
+When running the ICCAT vessel scripts, make sure to launch RStudio from the R Project file created through this process. This ensures that filepaths are referenced relative to the Project location and paths should be correctly referenced when running R scripts
+
+![](images/files-20mVessList.png){fig-align="center"}
+
+In the new R Studio instance, open ICCAT_monthly-20m-vessel-list.creation from the **Files** pane or via the following code:
+
+```{r rstudio, eval=FALSE}
+file.edit("ICCAT_monthly-20m-vessel-list-creation.R")
+```
+
+![](images/rstudio-view-20mVessList.png){fig-align="center"}
+
+## Generating the 20m Vessel List
+
+```{r setup, eval=FALSE}
+# Load in database credentials and required libraries
+source("./setup/libraries.R")
+source("./setup/filepath-settings.R")
+source("./setup/NFPLRS-database-credentials.R")
+
+# Load all functions for creating the vessel list
+source("./r-functions/BuildCP01.R")
+source("./r-functions/BuildQueryNFPLRS.R")
+source("./r-functions/CompileFCC.R")
+source("./r-functions/ExtractFCC.R")
+source("./r-functions/GenerateVesselListParameters.R")
+source("./r-functions/LoadICCATVesselRef.R")
+source("./r-functions/MergeVesselDataSources.R")
+source("./r-functions/ProcessPIMSData.R")
+source("./r-functions/QueryDBConnection.R")
+source("./r-functions/QueryFOSS.R")
+source("./r-functions/SaveNFPLRSDataFiles.R")
+```
+
+### Generate Parameters for Current Vessel List
+
+```{r dates, eval=FALSE}
+# Get monthly vessel list parameters ----
+vlist_params <- GenerateVesselListParameters()
+rm(GenerateVesselListParameters)
+
+# Get SQL query string for NFPLRS database ----
+query_text <- BuildQueryNFPLRS(vlist_params)
+rm(BuildQueryNFPLRS)
+```
+
+### Query NFPLRS
+
+```{r SQL, eval=FALSE}
+# Query data from NFPLRS SQL db ----
+oa_permits <- QueryDBConnection(db_Host, db_Port, db_Name, path.java_jre, path.ojdbc8_jar, db_Schema, query_text)
+rm(db_Acct, db_Host, db_Name, db_Pass, db_Port, db_Schema,
+   path.java_jre, path.ojdbc8_jar, query_text, QueryDBConnection)
+
+# Save NFPLRS data ----
+SaveNFPLRSDataFiles(oa_permits, vlist_params)
+rm(SaveNFPLRSDataFiles)
+```
+
+### Access PIMS and Load Data into R
+
+```{r PIMS, eval=FALSE}
+#' Instructions for Acquiring PIMS Data:
+#' 
+#' Log into PIMS via CAC, navigate to the "Permits" tab.
+#' Select "Filter for Vessel HMS Export".
+#' For the "ISSUED DATE" field, select all dates from the current month and prior month for the 
+#' vessel list being generated (e.g. FEB: 01/01/YYYY - 03/01/YYYY ).
+#' Sometimes, PIMS-permitted vessels may receive their permit in an earlier month than when the 
+#' permit is made active, so including the prior month should capture these instances.
+#' Select "Export to Excel"
+
+# Load PIMS data into R ----
+oa_pims_permits <- ProcessPIMSData(vlist_params, oa_permits)
+remove(ProcessPIMSData)
+```
+
+### Load Reference Data and Merge with Permit Info
+
+```{r merge, eval=FALSE}
+# Load ICCAT vessel reference files ----
+ICCAT_vesref <- LoadICCATVesselRef()
+rm(LoadICCATVesselRef)
+
+# Scrape FOSS vessel data ----
+FOSS_vessels <- QueryFOSS(oa_pims_permits, vlist_params, option = "scrape")
+rm(QueryFOSS)
+
+# Merge NFPLRS, PIMS, ICCAT, and FOSS data ----
+compiled_vessel_permits <- MergeVesselDataSources(oa_pims_permits, ICCAT_vesref, FOSS_vessels, vlist_params)
+rm(MergeVesselDataSources)
+
+# Compile data for CP_01 template ----
+BuildCP01(compiled_vessel_permits, vlist_params)
+```
+
+### Get FCC ULS Callsign Information
+
+```{r ULS, eval=FALSE}
+# Compile FCC ULS callsign info ----
+CompileFCC(vlist_params, option = "local")
+```
+
+## Final QAQC and Completing the CP01 Template

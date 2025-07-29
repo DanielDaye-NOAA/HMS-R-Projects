@@ -6,6 +6,7 @@
 # /DDaye/R/
 default-dir/
 package-documentation/
+project-documentation/images/
 r-functions/deprecated/
 r-packages/
 r-practice/
@@ -16,6 +17,7 @@ note-to-self.txt
 # /R/projects/
 projects/.deprecated/
 projects/A17_EFH_analysis.lnk
+projects/CoastWatch-Tutorials/
 projects/generate-letters-Elsa/
 projects/HMS-data-processing/data/
 projects/HMS-data-processing/output/
@@ -36,6 +38,7 @@ projects/ICCAT_vessel-list-20m/setup/filepath-settings.R
 projects/ICCAT_vessel-list-20m/setup/NFPLRS-database-credentials.R
 projects/misc/data/
 projects/nmfspalette/
+projects/State-of-the-Ecosystem/data/
 projects/website-testing/
 
 # Wildcards
