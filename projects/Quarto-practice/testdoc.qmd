@@ -1,0 +1,126 @@
+---
+title: "Quarto Test Document"
+author: "Daniel Daye"
+format: 
+  html:
+    code-fold: show
+    code-summary: "hide code"
+    code-tools: true
+    embed-resources: true
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Setup
+
+Load *tidyverse* and *ggtext* (plotting and data manipulation) and *reticulate* (run Python in R) libraries:
+
+```{r lib}
+#| label: setup
+#| output: false
+library(ggtext)
+library(tidyverse)
+library(reticulate)
+
+set.seed(02134)
+```
+
+## Example Data and Plot
+
+```{r setup}
+#| label: data
+data <- data.frame(x = rnorm(50, mean = 0, sd = 2)) %>% 
+  mutate(y = 2*-x^2 + rnorm(50, 0, 2))
+
+head(data)
+```
+
+Create a scatterplot using ggplot (included in tidyverse)
+
+```{r}
+#| label: example_plot
+#| code-fold: true
+#| code-summary: "show ggplot code"
+ggplot(data, aes(x,y)) +
+  geom_point() +
+  theme_bw()
+```
+
+## Example Figures (SAFE Report)
+
+### Figure 2.1
+
+```{r}
+#| label: fig_2.1
+#| code-fold: true
+segments = data.frame(xmin = c(0.5,0.75,1,1.25), xmax = c(0.5,0.75,2,1.25),
+                      ymin = c(0,0,0.75,0), ymax = c(1,1,0.75, 1))
+squares = data.frame(xmin = c(0,0.5), xmax = c(0.5,2), ymin = c(1,0), ymax = c(2,1))
+arrows = data.frame(x = c(0.5,0,0.5,0.5),y=c(1,1,1,2),g=c(1,1,2,2))
+ggplot() +
+  geom_rect(data = squares, aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax),
+            fill = c("red","green"), col = NA) +
+  geom_segment(data = segments, mapping = aes(xmin, ymin, xend=xmax, yend=ymax), lwd = 0.25) +
+  geom_vline(xintercept = 1, lty = "dashed") +
+  geom_hline(yintercept = 1, lty = "dashed") +
+  geom_line(data = arrows, mapping = aes(x,y,group=g), lwd = 0.75, 
+            arrow = arrow(ends = c("first","last"), type = "closed", length = unit(.1, "in"))) +
+  geom_richtext(mapping = aes(x = c(0.25, 0.5), y = c(1,1.5), 
+                              label = c("Overfished","Overfishing"),
+                              angle = c(90, 0)), 
+                label.r = unit(0,"cm")) +
+  coord_fixed(xlim = c(0,2), ylim = c(0,2), expand = F) +
+  labs(x = bquote(B/B[MSY]), y = bquote(F/F[MSY])) +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "yellow"),
+        panel.grid = element_blank())
+```
+
+### Figure 2.2
+
+```{r}
+#| label: fig_2.2
+#| code-fold: true
+squares = data.frame(xmin = c(0,1), xmax = c(1,2), ymin = c(1,0), ymax = c(2,1))
+ggplot(data = squares, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax)) +
+  geom_rect(fill = c("red","green"), col = NA) +
+  geom_vline(xintercept = 1, lty = "dashed") +
+  geom_hline(yintercept = 1, lty = "dashed") +
+  coord_fixed(xlim = c(0,2), ylim = c(0,2), expand = F) +
+  labs(x = bquote(B/B[MSY]), y = bquote(F/F[MSY])) +
+  theme_bw() +
+  theme(panel.background = element_rect(fill = "yellow"),
+        panel.grid = element_blank())
+```
+
+## Example Figure using *reticulate*
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+r = np.arange(0, 2, 0.01)
+theta = 2 * np.pi * r
+fig, ax = plt.subplots(
+  subplot_kw = {'projection': 'polar'}
+)
+ax.plot(theta,r)
+ax.set_rticks([0.5, 1, 1.5, 2])
+ax.grid(True)
+plt.show()
+```
+
+# Heading 1
+
+## Heading 2
+
+### Heading 3
+
+#### Heading 4
+
+##### Heading 5
+
+###### Heading 6
+
+Text
