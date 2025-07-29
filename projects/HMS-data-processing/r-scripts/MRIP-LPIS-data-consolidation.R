@@ -70,12 +70,12 @@ list_main  <- ConsolidateFiles(filenames = files_main,  path = "./LPS_Data/main/
 list_size  <- ConsolidateFiles(filenames = files_size,  path = "./LPS_Data/size/",  cols = col_size,  "list")
 
 ## Dataframes
-long_catch <- ConsolidateFiles(filenames = files_catch, path = "./LPS_Data/catch/", cols = col_catch, "long")
-long_main  <- ConsolidateFiles(filenames = files_main,  path = "./LPS_Data/main/",  cols = col_main,  "long")
-long_size  <- ConsolidateFiles(filenames = files_size,  path = "./LPS_Data/size/",  cols = col_size,  "long")
+long_catch <- ConsolidateFiles(filenames = files_catch, path = "./data/LPS_Data/catch/", cols = col_catch, "long")
+long_main  <- ConsolidateFiles(filenames = files_main,  path = "./data/LPS_Data/main/",  cols = col_main,  "long")
+long_size  <- ConsolidateFiles(filenames = files_size,  path = "./data/LPS_Data/size/",  cols = col_size,  "long")
 
 # Load Species Code Ref ----
-ref <- read_xlsx("hms-reference-tables.xlsx", sheet = "species_codes", guess_max = 1e5) %>%
+ref <- read_xlsx("./data/hms-reference-tables.xlsx", sheet = "species_codes", guess_max = 1e5) %>%
   mutate(Species_Code = sprintf("%04d", Species_Code))
 
 hms_codes <- ref %>% filter(HMS == TRUE) %>% pull(Species_Code)
@@ -111,6 +111,32 @@ long_catch <- long_catch %>%
   relocate(tracker, SRC, SPPCODE, SCINAME, COMNAME, YRMO, kept, observe, alive, dead, sell, weighed) %>%
   filter(SPPCODE %in% hms_codes) %>%
   arrange(SPPCODE, YRMO)
+
+# All Catches Export
+long_export <- long_catch %>%
+  left_join(long_main, by = c("tracker","year","month","stcode","control","docno","id")) %>%
+  mutate(latddmm = ifelse(latddmm %in% c(9996,9997,9998,9999), NA, latddmm),
+         londdmm = ifelse(londdmm %in% c(9996,9997,9998,9999), NA, londdmm)) %>%
+  mutate(latdec = as.numeric(substr(latddmm,1,2)) + (as.numeric(substr(latddmm,3,4))/60),
+         londec = as.numeric(substr(londdmm,1,2)) + (as.numeric(substr(londdmm,3,4))/60),
+         londec = londec * -1) %>%
+  transmute(TRACKER = tracker,
+            SPCODE = SPPCODE,
+            SCI_NAME = SCINAME,
+            COM_NAME = COMNAME,
+            LAT = latdec, LON = londec,
+            STCODE = stcode,
+            YR = year,
+            MO = month,
+            KEPT = kept,
+            ALIVE = alive,
+            DEAD = dead) %>%
+  filter(!is.na(LON), !is.na(LAT)) %>%
+  arrange(SCI_NAME)
+
+write_xlsx(long_export, "./output/MRIP-LPS-catch-data.xlsx")
+
+# Continued
 
 summary_catch <- long_catch %>%
   group_by(SPPCODE, SCINAME, COMNAME) %>%
