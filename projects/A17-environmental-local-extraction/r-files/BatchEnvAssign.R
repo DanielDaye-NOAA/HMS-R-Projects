@@ -2,15 +2,15 @@
 # Daniel Daye
 # Finalized EFH version (2025-JUN)
 
-#library(doParallel)
-#library(doSNOW)
-#library(ncdf4)
-#library(raster)
-#library(sp)
-#library(tidyverse)
+# TESTING ----
 
+# library(doParallel)
+# library(doSNOW)
+# library(ncdf4)
+# library(raster)
+# library(sp)
+# library(tidyverse)
 
-# TESTING
 # dir_SF <- "G:/SF1/EFH/2024-2026_A17 EFH Analysis/R_project/Environmental_Association_Data/"
 # data <- read_csv(paste0(dir_SF,"A17_BFT_2010-2024-AUG.csv"), guess_max = 1e6)
 # dir_BATHY <- "D:/A17-EFH-environmental-data/"
@@ -18,11 +18,20 @@
 # dir_HYCOM <- "D:/A17-EFH-environmental-data/HYCOM/"
 # dir_outfiles <- "D:/A17-EFH-environmental-data/outfiles/"
 
+# setwd(dir_outfiles)
+# cl <- makeCluster(4, outfile = "")
+# registerDoSNOW(cl)
+# environmental_data <- BatchEnvAssign(data, verbose = TRUE, dir_SF, dir_BATHY, dir_CMEMS, dir_HYCOM, dir_outfiles)
+
+# CODE ----
+
 BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCOM, dir_outfiles) {
+  
   print(getwd())
   if (verbose) {print("verbose: TRUE")}
   sysTime.in <- Sys.time()
   
+  # Converting date information into POSIXct format and sorting chronologically
   data <- data %>%
     mutate(DAY = substr(DATE, 9,10),
            # DAY = ifelse(nchar(DAY) == 1, paste0("0",DAY), DAY),
@@ -30,6 +39,7 @@ BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCO
                              format = "%Y-%m-%d", tz = "UTC")) %>%
     dplyr::arrange(DATE)
   
+  # How much data is included
   table(data$YEAR, data$MONTH)
   
   # Make into spdf
@@ -40,6 +50,11 @@ BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCO
   
   
   # Pre-Loop Processing ----
+  #' This section loops through a bunch of the environmental (.nc) files to set up extraction 
+  #' boundaries for each since there are some slight differences in the resolution/limits between
+  #' ETOPO, ERDDAP, and CMEMS
+  
+  
   ## BATHYMETRY ----
   if (verbose) {print("Opening bathymetry .nc file")}
   nc_depth <- nc_open(paste0(dir_BATHY,"etopo1_bedrock.nc"))
@@ -83,6 +98,7 @@ BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCO
   
   
   ## HYCOM ----
+  # SST, SSS, SSH, BT, BS (Height, Salinity, Temperature)
   #' Reference raster is generated using the HYCOM_surface (SST & SSS) files,
   #' but the extent and resolution are the same for HYCOM_bottom_ssh (SSH, BT, BS)
   if (verbose) {print("Initializing Batch Loop Reference for: SST, SSS, SSH, BT, BS")}
@@ -184,17 +200,21 @@ BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCO
   
   
   ## CHLA (OLD) ----
-  #if (verbose) {print("Initializing Batch Loop Reference for: CHLA")}
-  #data <- data %>%
-  #  mutate(CHLA = NA)
+  # if (verbose) {print("Initializing Batch Loop Reference for: CHLA")}
+  # data <- data %>%
+  #   mutate(CHLA = NA)
   #
-  #if (verbose) {print("Stacking CHLA grid...")}
-  #chla_stack <- stack("environmentalData/CHLA/chlastack.grd")
-  #chla_layer_names <- names(chla_stack)
-  #chla_names_split <- unlist(strsplit(chla_layer_names, "chla."))
-  #chla_names <- chla_names_split[seq(2, length(chla_names_split), by = 2)] %>%
-  #  as.POSIXct(format = "%Y.%m.%d", tz = "UTC")
+  # if (verbose) {print("Stacking CHLA grid...")}
+  # chla_stack <- stack("environmentalData/CHLA/chlastack.grd")
+  # chla_layer_names <- names(chla_stack)
+  # chla_names_split <- unlist(strsplit(chla_layer_names, "chla."))
+  # chla_names <- chla_names_split[seq(2, length(chla_names_split), by = 2)] %>%
+  #   as.POSIXct(format = "%Y.%m.%d", tz = "UTC")
   
+  
+  # Loop Setup ----
+  #' There are monthly loops and then daily loops nested within each to optimize the amount of times
+  #' that individual files are opened since there's it takes some time to open up each .nc file
   
   # Setting up YEAR_MO batches for foreach
   data$YEAR_MO <- paste0(data$YEAR,"_",data$MONTH)
@@ -208,10 +228,19 @@ BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCO
   print("BEGINNING FOREACH LOOPS ------")
   
   
-  # Month Loop ----
-  # i = 1
+  ## Month Loop ----
+  #' This is done in parallel and is where the script will stop printing all of the output to the
+  #' console. txt files are printed into the batch-outfiles folder, and each .txt corresponds to one
+  #' of the cores running a month at a certain time. Can open the file to check progress on the 
+  #' current month (All console printout is instead saved in here).
+
   filled_batches <- foreach (i = 1:length(yearMo_batches), .packages=c("ncdf4","raster","tidyverse")) %dopar% {
+    
+    #' The foreach loop is where each core begins looping through the data, and capture.output will 
+    #' save all of the console output to the batch-outfile .txt for the specied year-month
+
     capture.output({
+      
       ind_batch <- which(data$YEAR_MO == yearMo_batches[i])
       b.id <- paste0("[B.",i,"] ")
       
@@ -398,42 +427,26 @@ BatchEnvAssign <- function (data, verbose = TRUE, dir_BATHY, dir_CMEMS, dir_HYCO
           data$CHLA[ind_batch][sel.dy] <- NA
         }
         
-        # [D] CHLA ----
-        #print("CHLA")
-        #chla.t.1 <- as.POSIXct("1997-09-04",format="%Y-%m-%d",tz="UTC")
-        #chla.t.2 <- as.POSIXct("2019-12-27",format="%Y-%m-%d",tz="UTC")
-        # chla_layer_names # (Used as a reference for first/last, maybe?)
-        #if (caredate >= chla.t.1 & caredate <= chla.t.2) {
-        # Finds the left-hand (earlier) side of the time interval
-        #  chla.tloc <- findInterval(caredate, chla_names)
-        # Extract 
-        #  extVal_CHLA <- raster::extract(chla_stack[[chla.tloc]], spdf[ind_batch][sel.dy])
-        # Associate with data
-        #  data$CHLA[ind_batch][sel.dy] <- extVal_CHLA
-        #} else {
-        #  print("Extraction date outside range for CHLA")
-        #  data$CHLA[ind_batch][sel.dy] <- NA
-        #}
-        
         gc()
       }
       
+      #' Each month's environmental associations are saved into a data List, List element names are
+      #' specified as the year and month
       batchList <- list(data = data[ind_batch,])
       names(batchList) <- yearMo_batches[i]
       return(batchList)
     },
+    
+    #' This is where the filenames for the batch-outfiles are created
     file = paste0(dir_outfiles, "Batch_loop_", ifelse(nchar(i) == 1, paste0(0,i),i), ".txt"))
   }
   
+  #' All observations are associated with environmental files at this point, the total runtime of
+  #' the script is printed to the console, and the final dataset (List) is returned
+
   finalData <- filled_batches
-  
   sysTime.out <- Sys.time()
   print(difftime(sysTime.out, sysTime.in))
   
   return(finalData)
 }
-
-# setwd(dir_outfiles)
-# cl <- makeCluster(4, outfile = "")
-# registerDoSNOW(cl)
-# environmental_data <- BatchEnvAssign(data, verbose = TRUE, dir_SF, dir_BATHY, dir_CMEMS, dir_HYCOM, dir_outfiles)

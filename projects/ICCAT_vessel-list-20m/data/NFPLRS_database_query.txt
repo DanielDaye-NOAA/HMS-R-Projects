@@ -1,0 +1,28 @@
+"SELECT *
+                                  FROM
+                                  (
+                                      select 
+                                        VESSID as VESID, 
+                                        VESSELNAME as VESNAME, 
+                                        round(LENGTH*.3048, 1) as METERS, 
+                                        TONS as GT, 
+                                        HORSEPOWER as HP, 
+                                        YEARBUILT as YEAR_BUILT,
+                                        IMO as IMO_NUMBER,
+                                        ICCAT,
+                                        IRCS,
+                                        CATEGORY||'-'|| PERMITNBR as PERMIT,
+                                        ISSUEDDATE as EFFDATE,
+                                        VALIDTODATE as EXPDATE, 
+                                        Coalesce(ENTITYNAME,FIRSTNAME||' '||LASTNAME) as PERMIT_HOLDER,
+                                        NMFS.DECRYPTRAW(BILLTOSTREETADDRESS1)||', '||BILLTOCITY||', '||BILLTOSTATE||' '||BILLTOZIP5 as STREETADDRESS,
+                                        '('||NMFS.DECRYPTRAW(DAYPHONEAREACODE)||') ' ||substr(NMFS.DECRYPTRAW(DAYPHONENBR), 1, 3)||'-'||Substr(NMFS.DECRYPTRAW(DAYPHONENBR), 4, 4) as PHONE,
+                                        CHBENDORSEMENT 
+                                      From nmfs.VBIG 
+                                      Where  
+                                        CATEGORY  IN ('ANGLING', 'GENERAL', 'CHARTER/HEADBOAT', 'GENERAL & SWORDFISH', 'HARPOON & SWORDFISH')
+                                        -- ADJUST DATES
+                                        and ISSUEDDATE >= '01-CHANGEDATE1'   
+                                        and ISSUEDDATE < '01-CHANGEDATE2'
+                                  )
+                                  where METERS >= 20"
