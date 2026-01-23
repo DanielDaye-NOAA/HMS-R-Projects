@@ -124,7 +124,7 @@ CompileFCC <- function (compiled_vessel_permits, option = "local", save = TRUE) 
   
   if (save) {
     write.xlsx(FCC_extractions, 
-               file = paste0(filepath, vlist_params$year1, "_", vlist_params$mabb1,"_", "FCC-ULS_vessel-lookup.xlsx"))
+               file = paste0(filepath, vlist_params$year1, "-", vlist_params$mabb1,"_", "FCC-ULS_vessel-lookup.xlsx"))
   }
   
   message("All FCC processing completed!")

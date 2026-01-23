@@ -2,9 +2,9 @@ LoadICCATVesselRef <- function () {
   
   path_env_user <- gsub("[\\]", "/", paste0(Sys.getenv("USERPROFILE"), "/Downloads/"))
   
-  activ <- sum(grepl("_active.xls", list.files(path_env_user))) > 0
-  inact <- sum(grepl("_inactive.xls", list.files(path_env_user))) > 0
-  inopr <- sum(grepl("_inoperative.xls", list.files(path_env_user))) > 0
+  activ <- sum(grepl("_active.csv", list.files(path_env_user))) > 0
+  inact <- sum(grepl("_inactive.csv", list.files(path_env_user))) > 0
+  inopr <- sum(grepl("_inoperative.csv", list.files(path_env_user))) > 0
   
   if (activ & inact & inopr) {
     message("ICCAT vessel list source files found!")
@@ -21,21 +21,25 @@ LoadICCATVesselRef <- function () {
   }
 
   # Grab file paths
-  active_file <- paste0(path_env_user, list.files(path_env_user)[grepl("_active.xls", list.files(path_env_user))])
-  inactv_file <- paste0(path_env_user, list.files(path_env_user)[grepl("_inactive.xls", list.files(path_env_user))])
-  inoper_file <- paste0(path_env_user, list.files(path_env_user)[grepl("_inoperative.xls", list.files(path_env_user))])
+  active_file <- paste0(path_env_user, list.files(path_env_user)[grepl("_active.csv", list.files(path_env_user))])
+  inactv_file <- paste0(path_env_user, list.files(path_env_user)[grepl("_inactive.csv", list.files(path_env_user))])
+  inoper_file <- paste0(path_env_user, list.files(path_env_user)[grepl("_inoperative.csv", list.files(path_env_user))])
+  
+  #' UPDATE: As of the transition over to the new ICCATSerialNo format, ICCAT vessel reference lists
+  #' no longer include "Previous Vessel Name" and "Previous Flag" information with their data.
   
   # Load ICCAT files, subset, QAQC
-  active <- read_xls(active_file, guess_max = 1e6) %>%
-    transmute(ICCAT_NUM = as.character(ICCATSerialNo),
+  active <- read_csv(active_file, guess_max = 1e6) %>%
+    transmute(ICCAT_NUM = as.character(OLDICCATSerialNo),
+              ICCAT_NEW = as.character(ICCATSerialNo),
               NATREGNO  = as.character(NatRegNo),
               INTREGNO  = as.character(IntRegNo),
               INT_TYPE  = as.character(IRNoTypeCode),
               IRCS, 
               VESNAME = VesselName,
-              PRVNAME = VesselNamePrev,
+              #PRVNAME = VesselNamePrev,
               FLAG    = FlagVesCode,
-              FLAGPRV = FlagVesCodePrev,
+              #FLAGPRV = FlagVesCodePrev,
               LENGTH_M = as.numeric(gsub(",", ".", LOAm)),
               TONNAGE  = as.numeric(gsub(",", ".", Tonnage)),
               HP       = as.numeric(gsub(",", ".", EnginePowerHP)),
@@ -43,16 +47,17 @@ LoadICCATVesselRef <- function () {
     filter(FLAG == "USA") %>%
     mutate(STATUS = "ACTIVE")
   
-  inactv <- read_xls(inactv_file, guess_max = 1e6) %>%
-    transmute(ICCAT_NUM = as.character(ICCATSerialNo),
+  inactv <- read_csv(inactv_file, guess_max = 1e6) %>%
+    transmute(ICCAT_NUM = as.character(OLDICCATSerialNo),
+              ICCAT_NEW = as.character(ICCATSerialNo),
               NATREGNO  = as.character(NatRegNo),
               INTREGNO  = as.character(IntRegNo),
               INT_TYPE  = as.character(IRNoTypeCode),
               IRCS, 
               VESNAME = VesselName,
-              PRVNAME = VesselNamePrev,
+              #PRVNAME = VesselNamePrev,
               FLAG    = FlagVesCode,
-              FLAGPRV = FlagVesCodePrev,
+              #FLAGPRV = FlagVesCodePrev,
               LENGTH_M = as.numeric(gsub(",", ".", LOAm)),
               TONNAGE  = as.numeric(gsub(",", ".", Tonnage)),
               HP       = as.numeric(gsub(",", ".", EnginePowerHP)),
@@ -60,16 +65,17 @@ LoadICCATVesselRef <- function () {
     filter(FLAG == "USA") %>%
     mutate(STATUS = "INACTIVE")
   
-  inoper <- read_xls(inoper_file, guess_max = 1e6) %>%
-    transmute(ICCAT_NUM = as.character(ICCATSerialNo),
+  inoper <- read_csv(inoper_file, guess_max = 1e6) %>%
+    transmute(ICCAT_NUM = as.character(OLDICCATSerialNo),
+              ICCAT_NEW = as.character(ICCATSerialNo),
               NATREGNO  = as.character(NatRegNo),
               INTREGNO  = as.character(IntRegNo),
               INT_TYPE  = as.character(IRNoTypeCode),
               IRCS, 
               VESNAME = VesselName,
-              PRVNAME = VesselNamePrev,
+              #PRVNAME = VesselNamePrev,
               FLAG    = FlagVesCode,
-              FLAGPRV = FlagVesCodePrev,
+              #FLAGPRV = FlagVesCodePrev,
               LENGTH_M = as.numeric(gsub(",", ".", LOAm)),
               TONNAGE  = as.numeric(gsub(",", ".", Tonnage)),
               HP       = as.numeric(gsub(",", ".", EnginePowerHP)),
@@ -81,7 +87,7 @@ LoadICCATVesselRef <- function () {
     mutate(INTREGNO = ifelse(INTREGNO == "1", "0000001", INTREGNO),
            IRCS = ifelse(IRCS %in% c("(blank)","(n/a)"), NA, IRCS),
            VESNAME = toupper(gsub("\u0092", "'", VESNAME)),
-           PRVNAME = toupper(gsub("\u0092", "'", PRVNAME)),
+           # PRVNAME = toupper(gsub("\u0092", "'", PRVNAME)),
            NATREGNO = ifelse(NATREGNO == "(blank)", NA, NATREGNO),
            NATREGNO = ifelse(substr(NATREGNO,1,2) == "DO", gsub("DO", "", NATREGNO), NATREGNO),
            INT_TYPE = ifelse(INT_TYPE == "unk", NA, INT_TYPE))

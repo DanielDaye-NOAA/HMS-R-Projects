@@ -40,6 +40,10 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
   #' In some instances, there might be two entries for the same ICCAT VESID (an error), this will 
   #' collapse all entries for a single VESID into one column and preserve the unique info in each
   #' entry
+
+  #' UPDATE: As of the transition over to the new ICCATSerialNo format, ICCAT vessel reference lists
+  #' no longer include "Previous Vessel Name" and "Previous Flag" information with their data.
+  
   ICCAT_uniqueref <- ICCAT_vesref %>%
     filter(!is.na(NATREGNO)) %>%
     rename(VESID = NATREGNO) %>% 
@@ -48,11 +52,12 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
     group_by(VESID) %>%
     summarize(ROWCT = n(),
               ICCAT_NUM = paste(unique(ICCAT_NUM), collapse = ":"),
+              ICCAT_NEW = paste(unique(ICCAT_NEW), collapse = ":"),
               INTREGNO  = paste(unique(INTREGNO), collapse = ":"),
               INT_TYPE  = paste(unique(INT_TYPE), collapse = ":"),
               ICCAT_IRCS  = paste(unique(IRCS), collapse = ":"),
               ICCAT_VNAME = paste(unique(VESNAME), collapse = ":"),
-              ICCAT_PRVNAME = paste(unique(PRVNAME), collapse = ":"),
+              # ICCAT_PRVNAME = paste(unique(PRVNAME), collapse = ":"),
               FLAG      = paste(unique(FLAG), collapse = ":"),
               ICCAT_LENGTH  = paste(unique(LENGTH_M), collapse = ":"),
               TONNAGE   = paste(unique(TONNAGE), collapse = ":"),
@@ -66,7 +71,7 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
            INTREGNO = ifelse(INTREGNO=="NA", NA, INTREGNO),
            INT_TYPE = ifelse(INT_TYPE=="NA", NA, INT_TYPE),
            ICCAT_IRCS     = ifelse(ICCAT_IRCS=="NA", NA, ICCAT_IRCS),
-           ICCAT_PRVNAME  = ifelse(ICCAT_PRVNAME=="NA", NA, ICCAT_PRVNAME),
+           # ICCAT_PRVNAME  = ifelse(ICCAT_PRVNAME=="NA", NA, ICCAT_PRVNAME),
            STATUS = ifelse(STATUS=="ACTIVE:INACTIVE", "ACTIVE", STATUS),
            STATUS = ifelse(STATUS=="INACTIVE:INACTIVE", "INACTIVE", STATUS))
   
@@ -84,7 +89,8 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
     left_join(ICCAT_uniqueref, by = "VESID") %>%
     # Reorganizing columns
     relocate(ICCAT, ICCAT_NUM, IMO_NUMBER, CG_IMO, INTREGNO, INT_TYPE,
-             VESID, VESNAME, ICCAT_VNAME, ICCAT_PRVNAME,
+             VESID, VESNAME, ICCAT_VNAME, 
+             # ICCAT_PRVNAME,
              PERMIT, CHBENDORSEMENT, PERMIT_TYPE, GEAR_TYPE, 
              IRCS, ICCAT_IRCS,
              METERS, CG_LENGTH, ICCAT_LENGTH, 
@@ -160,17 +166,33 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
   #' VESID is only present in 1 spot, so will carry over directly into the CP01 form
   
   ## VESNAME ----
-  compiled_vess_unique <- compiled_vess_unique %>%
+  
+  #' Restructured this to avoid using "Previous Vessel Name" in anything
+  compiled_vess_unique_old <- compiled_vess_unique %>%
     mutate(VESNAME = gsub("^\\s+|\\s+$", "", VESNAME),                  # Regex to remove leading
            ICCAT_VNAME = gsub("^\\s+|\\s+$", "", ICCAT_VNAME),          # and trailing whitespace in
-           ICCAT_PRVNAME = gsub("^\\s+|\\s+$", "", ICCAT_PRVNAME),      # each VESNAME column
+           # ICCAT_PRVNAME = gsub("^\\s+|\\s+$", "", ICCAT_PRVNAME),    # each VESNAME column
            CP01_VNAME = VESNAME,
            VNAME_FLAG = ifelse(VESNAME == ICCAT_VNAME, "SAME_NAME", NA),
            VNAME_FLAG = ifelse(VESNAME != ICCAT_VNAME, "NEW_NAME", VNAME_FLAG),
            VNAME_FLAG = ifelse(!is.na(VESNAME) & is.na(ICCAT_VNAME), "NEW_VESSEL", VNAME_FLAG),
-           CP01_PNAME = ifelse(!is.na(ICCAT_PRVNAME) & (VESNAME != ICCAT_PRVNAME), ICCAT_PRVNAME, NA),
-           CP01_PNAME = ifelse(VNAME_FLAG == "NEW_NAME", ICCAT_VNAME, CP01_PNAME)) %>%
-    relocate(VESNAME, ICCAT_VNAME, ICCAT_PRVNAME, CP01_VNAME, CP01_PNAME, VNAME_FLAG, .after = last_col())
+           # CP01_PNAME = ifelse(!is.na(ICCAT_PRVNAME) & (VESNAME != ICCAT_PRVNAME), ICCAT_PRVNAME, NA),
+           # CP01_PNAME = ifelse(VNAME_FLAG == "NEW_NAME", ICCAT_VNAME, CP01_PNAME)
+           ) %>%
+    relocate(VESNAME, ICCAT_VNAME, 
+             # ICCAT_PRVNAME, 
+             CP01_VNAME, 
+             # CP01_PNAME, 
+             VNAME_FLAG, .after = last_col())
+  
+  compiled_vess_unique <- compiled_vess_unique %>%
+    mutate(VESNAME = gsub("^\\s+|\\s+$", "", VESNAME),                  # Regex to remove leading
+           ICCAT_VNAME = gsub("^\\s+|\\s+$", "", ICCAT_VNAME),
+           CP01_VNAME = VESNAME,
+           VNAME_FLAG = ifelse(VESNAME == ICCAT_VNAME, "SAME_NAME", NA),
+           VNAME_FLAG = ifelse(VESNAME != ICCAT_VNAME, "NEW_NAME", VNAME_FLAG),
+           VNAME_FLAG = ifelse(!is.na(VESNAME) & is.na(ICCAT_VNAME), "NEW_VESSEL", VNAME_FLAG)) %>%
+    relocate(VESNAME, ICCAT_VNAME, CP01_VNAME, VNAME_FLAG, .after = last_col())
   
   ## IRCS ----
   compiled_vess_unique <- compiled_vess_unique %>% 
@@ -191,20 +213,27 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
   print(t(data_QAQC_summary))
   
   # If CP01_PNAME has multiple names listed, use the most recent name
-  compiled_vess_unique <- compiled_vess_unique %>% 
+  compiled_vess_unique_old2 <- compiled_vess_unique %>% 
     mutate(CP01_VNAME = VESNAME,
-           CP01_PNAME = ifelse(VESNAME == ICCAT_VNAME & VESNAME != ICCAT_PRVNAME, ICCAT_PRVNAME, NA)) %>%
-    relocate(VESNAME, ICCAT_VNAME, ICCAT_PRVNAME, CP01_VNAME, CP01_PNAME, .after = last_col())
-  
+           #CP01_PNAME = ifelse(VESNAME == ICCAT_VNAME & VESNAME != ICCAT_PRVNAME, ICCAT_PRVNAME, NA)
+           ) %>%
+    relocate(VESNAME, ICCAT_VNAME, 
+             #ICCAT_PRVNAME, 
+             CP01_VNAME, 
+             #CP01_PNAME, 
+             .after = last_col())
   
   # Checking Length ~ Weights
   
   #' Plot tonnage ~ length. This should be a reasonably linear relationship. If a vessel has a very large
   #' and very small tonnage, it is likely a small boat (< 20m) that has been incorrectly entered into
   #' the HMS permit website
-  compiled_vess_unique %>%
+  gplot <- compiled_vess_unique %>%
     ggplot(aes(CP01_LENGTH, CP01_TONNAGE)) +
+    xlim(0,NA) + ylim(0,NA) +
+    geom_abline(slope = 4, intercept = 0, col = "gray50") +
     geom_point() + theme_bw()
+  plot(gplot)
   
   # Numbering
   compiled_vess_unique <- compiled_vess_unique %>% 
@@ -213,7 +242,9 @@ MergeVesselDataSources <- function (oa_pims_permits, ICCAT_vesref, FOSS_vessels,
     mutate(OWNERID = 1:nrow(compiled_vess_unique),
            OPERATORID = 1:nrow(compiled_vess_unique)) %>%
     relocate(CP01_ICCAT, VESID, CP01_IMO, PERMITS, PERMIT_TYPE, GEAR_TYPE, CHBENDORSEMENT, 
-             CP01_VNAME, CP01_PNAME, OWNERID, OPERATORID, CP01_LENGTH, CP01_TONNAGE)
+             CP01_VNAME, 
+             # CP01_PNAME, 
+             OWNERID, OPERATORID, CP01_LENGTH, CP01_TONNAGE)
   
   return(compiled_vess_unique)
 }

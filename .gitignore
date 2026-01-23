@@ -19,6 +19,8 @@ projects/.deprecated/
 projects/A15/data/
 projects/A16/data/
 projects/A16/r-credentials/
+projects/A17-environmental-local-extraction/data
+projects/A17-environmental-local-extraction/envdata
 projects/A17_EFH_analysis.lnk
 projects/CoastWatch-Tutorials/
 projects/generate-letters-Elsa/
@@ -43,7 +45,13 @@ projects/misc/data/
 projects/misc/r-scripts/deprecated/
 projects/misc/r-scripts/Wetherbee_jordan_TommyLines_depth.R
 projects/nmfspalette/
+projects/SAFE-Report-2023/data/
+projects/SAFE-Report-2023/exports/
+projects/SAFE-Report-2023/markdown/
+projects/SAFE-Report-2023/r-scripts/filepaths.R
 projects/State-of-the-Ecosystem/data/
+projects/TROP-permit-gear-counts/data/
+projects/TROP-permit-gear-counts/r-scripts/vess-perm-endorsements.R
 projects/website-testing/
 
 # Wildcards

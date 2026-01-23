@@ -81,7 +81,8 @@ rm(MergeVesselDataSources)
 BuildCP01(compiled_vessel_permits, vlist_params)
 
 # At this point, go into the completed template, and make any adjustments needed.
-# Save as "YYYY-MON_CP01-templSate-vessel-list-final.xlsx
+# Save as "YYYY-MON_CP01-template-vessel-list-final.xlsx
 
 # Compile FCC ULS callsign info ----
 CompileFCC(vlist_params, option = "local")
+

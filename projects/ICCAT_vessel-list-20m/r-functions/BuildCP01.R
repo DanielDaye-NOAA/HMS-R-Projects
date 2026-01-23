@@ -11,7 +11,7 @@ BuildCP01 <- function (compiled_vessel_permits, vlist_params) {
   
   compiled_vessel_permits <- compiled_vessel_permits %>%
     mutate(FLAG = "USA", FLAGPRV = "USA",
-           LEN_TYPE = "LOAm", TON_TYPE = "GRT",
+           LEN_TYPE = "LOA", TON_TYPE = "GRT",
            VMS_TYPE = ifelse(GEAR_TYPE == "LL", "VMS-GEN", "NO-VMS"),
            RENEW_MODE = "EXPL") %>%
     mutate(EFF_DATE2 = format(as.Date(EFFDATE), f = "%d/%m/%Y"),
@@ -75,21 +75,23 @@ BuildCP01 <- function (compiled_vessel_permits, vlist_params) {
   
   # Compiling CP01 Forms
   CP01A <- compiled_vessel_permits %>%
-    transmute(ICCATSerialNo = CP01_ICCAT, 
+    transmute(ICCATSerialNo = ifelse(!is.na(ICCAT_NEW), ICCAT_NEW, CP01_ICCAT), 
               NatRegNo      = VESID, 
               IntRegNo      = CP01_IMO, 
               IRNoType      = INT_TYPE, 
               IRCS          = CP01_IRCS, 
-              VesselNameCur = CP01_VNAME, 
-              VesselNamePrv = CP01_PNAME,
+              VesselNameCur = CP01_VNAME,
+              VesselNamePrv = NA,
+              # VesselNamePrv = CP01_PNAME,
               FlagCurCd     = FLAG, 
-              FlagPrvCD     = FLAGPRV, 
+              FlagPrvCD     = NA, 
+              # FlagPrvCD     = FLAGPRV, 
               OwnerID       = OWNERID, 
               OperatorID    = OPERATORID, 
               IsscfvID      = PERMIT_TYPE, 
               IsscfgID      = GEAR_TYPE, 
               LengthM       = CP01_LENGTH, 
-              LenType       = "LOAm", 
+              LenType       = "LOA", 
               Tonnage       = CP01_TONNAGE, 
               TonType       = "GRT",
               CarCapacity = NA, CCapUnitCd = NA, ExternalMark = NA,
