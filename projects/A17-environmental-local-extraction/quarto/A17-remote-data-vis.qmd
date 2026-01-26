@@ -1,0 +1,66 @@
+---
+title: "EFH"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+engine: knitr
+---
+
+```{r setup}
+#| label: setup
+#| warning: false
+
+library(ggridges)
+library(gt)
+library(readxl)
+library(tidyverse)
+
+# data <- read_xlsx("./extractions/env_data_2010.xlsx", guess_max = 1e6)
+data <- readRDS("./data/consolidated-env-association.RDS")
+
+SST <- data %>%
+  pivot_longer(cols = BATHYMETRY:CHLA, names_to = "ENV_VAR", values_to = "VALUE") %>%
+  filter(ENV_VAR == "SST") %>%
+  mutate(YEAR = factor(YEAR, levels = as.character(2010:2024)),
+         MONTH = factor(MONTH, levels = rev(c("01","02","03","04","05","06","07","08","09","10","11","12")))) %>%
+  arrange(COM_NAME, YEAR, DATE)
+```
+
+```{r plots}
+#| label: sst-plots
+#| warning: false
+
+for (i in 1:length(unique(SST$COM_NAME))) {
+  # print(i)
+  spc <- unique(SST$COM_NAME)[i]
+  tbl <- data %>% filter(COM_NAME == spc) %>%
+    pivot_longer(cols = BATHYMETRY:CHLA, names_to = "ENV_VAR", values_to = "VALUE") %>%
+    group_by(LIFESTAGE, ENV_VAR) %>%
+    summarize(MIN = min(VALUE, na.rm = TRUE),
+              Q1 = quantile(VALUE, prob = .25, na.rm = TRUE),
+              MEDIAN = median(VALUE, na.rm = TRUE),
+              MEAN = mean(VALUE, na.rm = TRUE),
+              SD = sd(VALUE, na.rm = TRUE),
+              Q3 = quantile(VALUE, prob = .75, na.rm = TRUE),
+              MAX = max(VALUE, na.rm = TRUE)) %>%
+    print()
+  
+  print(tbl)
+  plt.i <- SST %>%
+    filter(COM_NAME == spc, !is.na(VALUE)) %>%
+    ggplot(aes(VALUE, MONTH, fill = stat(x))) +
+    geom_density_ridges_gradient(scale=0.8, rel_min_height = 0.001, bandwidth=.5) +
+    scale_fill_viridis_c(limits = c(min(SST$VALUE, na.rm = TRUE), max(SST$VALUE, na.rm = TRUE)),
+                         name = "SST [C]", option = "C") +
+    xlim(min(SST$VALUE, na.rm = TRUE), max(SST$VALUE, na.rm = TRUE)) +
+    xlab("SST [C]") + ylab("") +
+    scale_y_discrete(breaks = rev(c("01","02","03","04","05","06","07","08","09","10","11","12")),
+                     label = rev(month.abb), drop = FALSE) +
+    theme_bw() + labs(title = spc) +
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank()) +
+    guides(fill = "none")
+  plot(plt.i)
+}
+```
